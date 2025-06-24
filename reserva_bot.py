@@ -1,45 +1,34 @@
-import os
-from playwright.sync_api import sync_playwright
-from utils import capturar_screenshot, enviar_correo
+# Ir al panel principal tras login
+page.goto("https://reservas.olympicgym.cl", timeout=60000)
+page.wait_for_timeout(2000)
 
-def ejecutar_reserva(email_gym, pass_gym):
-    email_destino = os.getenv("EMAIL_DESTINO")
-    email_remitente = os.getenv("EMAIL_REMITENTE")
+# Hacer clic en el botón de menú 'Agenda'
+try:
+    page.wait_for_selector("text=Agenda", timeout=10000)
+    page.click("text=Agenda")
+    print("📋 Se accedió correctamente a la sección Agenda.")
+    page.wait_for_timeout(3000)
+except:
+    raise Exception("❌ No se pudo hacer clic en 'Agenda'")
 
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
-            page = context.new_page()
+# Buscar clases
+clases = page.locator("div.class-info")
+encontrada = False
 
-            page.goto("https://reservas.olympicgym.cl/accounts/login/?next=/")
-            page.fill("#id_login", email_gym)
-            page.fill("#id_password", pass_gym)
-            page.click("button[type='submit']")
-            page.wait_for_timeout(3000)
+for i in range(clases.count()):
+    clase = clases.nth(i)
+    texto = clase.inner_text()
 
-            if "Cerrar sesión" not in page.content():
-                raise Exception(f"Login fallido para {email_gym}")
+    if "Antonella" in texto and "08:15" in texto:
+        if "Reservar ahora" in texto:
+            print("✅ Clase encontrada. Reservando...")
+            clase.click()
+            encontrada = True
+            break
+        else:
+            print("⏳ Clase aún no disponible para reservar.")
+            encontrada = True
+            break
 
-            page.goto("https://reservas.olympicgym.cl/classes/agenda/")
-            page.wait_for_timeout(3000)
-
-            reservado = False
-            cards = page.query_selector_all(".class-card")
-
-            for card in cards:
-                texto = card.inner_text()
-                if "Antonella" in texto and "08:15" in texto:
-                    span = card.query_selector("span[id^='spn-agendar-text']")
-                    if span and span.inner_text().strip() == "Reservar ahora":
-                        span.click()
-                        reservado = True
-                        break
-
-            mensaje = f"✅ [{email_gym}] Clase reservada con éxito" if reservado else f"⚠️ [{email_gym}] No se encontró clase para reservar"
-            img = capturar_screenshot(page)
-            enviar_correo(email_remitente, email_destino, mensaje, img)
-            browser.close()
-
-    except Exception as e:
-        enviar_correo(email_remitente, email_destino, f"❌ [{email_gym}] Error: {str(e)}", None)
+if not encontrada:
+    print("❌ No se encontró clase con Antonella a las 08:15.")
