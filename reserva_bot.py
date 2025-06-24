@@ -5,9 +5,9 @@ import traceback
 
 URL_LOGIN = "https://reservas.olympicgym.cl/accounts/login/?next=/"
 
-def ejecutar_reserva(email_gym, pass_gym):
+def ejecutar_reserva(email_gym, pass_gym, remitente, destino):
     if not email_gym or not pass_gym:
-        print(f"⚠️ Credenciales faltantes. Se omite cuenta.")
+        print("⚠️ Credenciales faltantes. Se omite cuenta.")
         return
 
     print(f"🔐 Iniciando reserva para {email_gym}")
@@ -31,20 +31,14 @@ def ejecutar_reserva(email_gym, pass_gym):
             if "Cerrar sesión" not in page.content():
                 raise Exception("⚠️ Login fallido")
 
-            # Ir al panel principal
-            page.goto("https://reservas.olympicgym.cl", timeout=60000)
-            page.wait_for_timeout(2000)
+            # Ir a la agenda (vía clic en el botón)
+            boton_agenda = page.locator("a:has-text('Agenda')")
+            if boton_agenda.count() == 0:
+                raise Exception("⚠️ Botón 'Agenda' no encontrado.")
+            boton_agenda.first.click()
+            page.wait_for_timeout(3000)
 
-            # Hacer clic en "Agenda"
-            try:
-                page.wait_for_selector("text=Agenda", timeout=10000)
-                page.click("text=Agenda")
-                print("📋 Se accedió correctamente a la sección Agenda.")
-                page.wait_for_timeout(3000)
-            except:
-                raise Exception("❌ No se pudo hacer clic en 'Agenda'")
-
-            # Buscar clases
+            # Buscar clase específica
             clases = page.locator("div.class-info")
             encontrada = False
 
@@ -69,8 +63,8 @@ def ejecutar_reserva(email_gym, pass_gym):
                 print("❌ No se encontró clase con Antonella a las 08:15.")
 
             enviar_correo(
-                os.getenv("EMAIL_REMITENTE"),
-                os.getenv("EMAIL_DESTINO"),
+                remitente,
+                destino,
                 f"🔔 [{email_gym}] Resultado reserva",
                 nombre_img
             )
@@ -80,10 +74,15 @@ def ejecutar_reserva(email_gym, pass_gym):
     except Exception as e:
         print(f"❌ Error para {email_gym}: {e}")
         traceback.print_exc()
-        nombre_img = "error.png"
+        nombre_img = None
+        if 'page' in locals():
+            try:
+                nombre_img = capturar_screenshot(page, f"{email_gym}_error.png")
+            except:
+                pass
         enviar_correo(
-            os.getenv("EMAIL_REMITENTE"),
-            os.getenv("EMAIL_DESTINO"),
+            remitente,
+            destino,
             f"❌ [{email_gym}] Error: {str(e)}",
-            capturar_screenshot(page, nombre_img) if 'page' in locals() else None
+            nombre_img
         )
