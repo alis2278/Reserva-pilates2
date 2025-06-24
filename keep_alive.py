@@ -1,8 +1,7 @@
 from flask import Flask
 from threading import Thread
-import os
 
-app = Flask(__name__)
+app = Flask('')
 
 @app.route('/')
 def home():
@@ -13,8 +12,7 @@ def ping():
     return "pong"
 
 def run():
-    port = int(os.environ.get("PORT", 8080))  # Puerto que Render asigna dinámicamente
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=8080)
 
 def keep_alive():
     t = Thread(target=run)
