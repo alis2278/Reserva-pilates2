@@ -1,16 +1,37 @@
 services:
-  - type: worker
+  - type: web
     name: reserva-pilates-bot
-    env: docker
+    env: python
     plan: free
     region: oregon
-    buildCommand: ""
-    startCommand: "python main.py"
-    autoDeploy: true
+    buildCommand: pip install -r requirements.txt && playwright install
+    startCommand: python main.py
     envVars:
-      - key: TZ
-        value: America/Santiago
-    cron:
-      - name: ejecutar_reserva
-        schedule: "0 7 * * 2,4,7"
-        command: "python main.py"
+      - key: EMAIL_GYM
+        sync: false
+      - key: PASS_GYM
+        sync: false
+      - key: EMAIL_GYM2
+        sync: false
+      - key: PASS_GYM2
+        sync: false
+      - key: EMAIL_GYM3
+        sync: false
+      - key: PASS_GYM3
+        sync: false
+      - key: EMAIL_REMITENTE
+        sync: false
+      - key: EMAIL_REMITENTE2
+        sync: false
+      - key: EMAIL_REMITENTE3
+        sync: false
+      - key: EMAIL_DESTINO
+        sync: false
+      - key: EMAIL_DESTINO2
+        sync: false
+      - key: EMAIL_DESTINO3
+        sync: false
+      - key: MJ_APIKEY_PUBLIC
+        sync: false
+      - key: MJ_APIKEY_PRIVATE
+        sync: false
