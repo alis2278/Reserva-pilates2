@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: reserva-pilates-bot
+    env: docker
+    plan: free
+    region: oregon
+    buildCommand: ""
+    startCommand: "python main.py"
+    autoDeploy: true
+    envVars:
+      - key: TZ
+        value: America/Santiago
+    cron:
+      - name: ejecutar_reserva
+        schedule: "0 7 * * 2,4,7"
+        command: "python main.py"
